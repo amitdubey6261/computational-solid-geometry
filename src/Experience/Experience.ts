@@ -1,18 +1,26 @@
-import { BoxGeometry, Mesh, MeshBasicMaterial, Scene } from "three";
+import { Scene } from "three";
 import Camera from "./Camera";
 import Renderer from "./Renderer";
 import Sizes from "./Sizes";
 import Time from "./Time";
+import Raycast from "./Raycaster";
+import World from "./World";
+import Environment from "./Envrionment";
+import Eventlisteners from "./Eventlistners";
 
 export default class Experience {
 	static instance: Experience;
 	canvas!: HTMLCanvasElement;
 	time!: Time ; 
 	sizes !: Sizes ; 
+	eventlistners !: Eventlisteners ;
 	camera !: Camera ;
 	renderer !: Renderer ; 
+	raycaster !: Raycast ;
+	world !: World ;
 
-	scene !: Scene ; 
+	scene !: Scene ;
+	envrionment !: Environment ; 
 
 	constructor(canvas?: HTMLCanvasElement) {
 
@@ -26,11 +34,12 @@ export default class Experience {
 		if( canvas) this.canvas = canvas;
 		this.time = new Time(); 
 		this.sizes = new Sizes(this.canvas); 
+		this.eventlistners = new Eventlisteners() ;
 		this.camera = new Camera() ; 
 		this.renderer = new Renderer() ;
-
-		const box  = new Mesh(new BoxGeometry(1,1,1), new MeshBasicMaterial({color: 0xff0000}));
-		this.scene.add(box); 
+		this.raycaster = new Raycast() ;
+		this.envrionment = new Environment() ;
+		this.world = new World() ; 
 
 		this.time.on('tick' , ()=>{
 			this.update();
