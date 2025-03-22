@@ -1,45 +1,44 @@
-import { BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, Vector2, Vector3 } from "three";
+import { BoxGeometry, BufferAttribute, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, Vector3 } from "three";
 import Experience from "./Experience";
 import { SUBTRACTION, INTERSECTION, Brush, Evaluator } from "three-bvh-csg";
-import { GLTF, Line2, LineGeometry, LineMaterial } from "three/examples/jsm/Addons.js";
-import { TransformControls } from "three/examples/jsm/Addons.js";
+import { DragControls, GLTF, Line2, LineGeometry, LineMaterial } from "three/examples/jsm/Addons.js";
 
 export default class World {
-    experience: Experience ;
-    
-    transformControls !: TransformControls ; 
-    transformGizmo !: any ; 
+    experience: Experience;
 
     baseBrush: Brush = new Brush();
     evaluator: Evaluator = new Evaluator();
-    cutter : Brush = new Brush();
+    cutter: Brush = new Brush();
 
     invisiblePlane !: Mesh;
 
     ctrlActive: boolean = false;
     activateCutting: boolean = false;
-    cuttingPoints: Mesh[] = [];
+    cuttingLinePoints: Mesh[] = [];
     cuttingLine!: Line2;
+    cuttingPlaneActive: boolean = false;
     cuttingPlane !: Mesh;
+    cuttingPlanePoints: Mesh[] = [];
 
+    selectableObjects: Brush[] = [];
 
     constructor() {
         this.experience = new Experience();
 
-        this.setupTransformControls(); 
+        this.setupTransformControls();
         this.setupEvaluator();
         this.createBaseBrush();
         this.createInvisiblePlane();
     }
 
-    setupTransformControls(){
-        this.transformControls = new TransformControls(this.experience.camera.instance , this.experience.canvas ); 
-        this.transformControls.addEventListener('dragging-changed' , (event)=>{
-            this.experience.camera.controls.enabled  = !event.value ; 
+    setupTransformControls() {
+        const dragcontrols = new DragControls(this.selectableObjects, this.experience.camera.instance, this.experience.canvas);
+        dragcontrols.addEventListener('dragstart', () => {
+            this.experience.camera.controls.enabled = false;
         })
-
-        this.transformGizmo = this.transformControls.getHelper() ; 
-        this.experience.scene.add(this.transformGizmo); 
+        dragcontrols.addEventListener('dragend', () => {
+            this.experience.camera.controls.enabled = true;
+        })
     }
 
     setupEvaluator() {
@@ -49,11 +48,21 @@ export default class World {
         this.evaluator.attributes = ['position', 'normal'];
     }
 
-    createBaseBrush() {
+    createBaseBrush(model: GLTF | undefined = undefined) {
         /* 
             This Method is for creating default Mesh which is going to be cut
         */
-        const geometry = new BoxGeometry(1, 1, 1);
+
+        this.disposeBaseBrush() ; 
+
+        let geometry ; 
+        if( model && model.scene.children[0] instanceof Mesh ){
+            geometry = model.scene.children[0].geometry.clone() ; 
+        }
+        else{
+            geometry = new BoxGeometry(1, 1, 1);
+        }
+
         geometry.computeVertexNormals();
 
         this.baseBrush.geometry = geometry;
@@ -68,8 +77,8 @@ export default class World {
         this.setGeometryProps(this.baseBrush);
         this.baseBrush.position.set(0, 0, 0);
         this.experience.scene.add(this.baseBrush);
-
-        this.transformControls.attach(this.baseBrush);
+        this.selectableObjects.push(this.baseBrush);
+        this.experience.raycaster.selectedObject = this.baseBrush;
     }
 
     createCuttingBrush(mesh: Mesh) {
@@ -94,12 +103,12 @@ export default class World {
 
         this.setGeometryProps(this.cutter);
         this.experience.scene.add(this.cutter);
-        this.cutter.visible = false ; 
+        this.cutter.visible = false;
     }
 
-    setGeometryProps(brush: Brush) { 
+    setGeometryProps(brush: Brush) {
         /* 
-            This Method is for BVH geometry
+            This Method is for BVH geometry (preset) 
         */
 
         brush.geometry = brush.geometry.toNonIndexed();
@@ -136,7 +145,7 @@ export default class World {
     }
 
 
-    pointerdown(event: PointerEvent) {
+    pointerdown() {
         /* 
             This Method is for mouse operation on mesh
         */
@@ -149,32 +158,35 @@ export default class World {
                 Start capturing mouse position & create plane cutter
              */
             this.invisiblePlane.quaternion.copy(this.experience.camera.instance.quaternion);
-            this.captureCuttingStartPoition();
-            this.createCuttingLine();
+            this.startCuttingLine();
         }
     }
 
-    captureCuttingStartPoition() {
+    startCuttingLine() {
+
+        if (this.cuttingPlaneActive) return;
+
         if (this.activateCutting) {
             this.experience.camera.controls.enabled = false;
             const pointer = this.experience.raycaster.shootRayfromCamera(this.invisiblePlane);
 
-            this.cuttingPoints[0] = new Mesh(new SphereGeometry(.2), new MeshBasicMaterial({ color: 0xff0000 }));
-            this.cuttingPoints[1] = new Mesh(new SphereGeometry(.2), new MeshBasicMaterial({ color: 0xff0000 }));
+            this.cuttingLinePoints[0] = new Mesh(new SphereGeometry(.2), new MeshBasicMaterial({ color: 0xff0000 }));
+            this.cuttingLinePoints[1] = new Mesh(new SphereGeometry(.2), new MeshBasicMaterial({ color: 0xff0000 }));
 
             if (pointer) {
-                this.cuttingPoints[0].position.copy(pointer[0].point);
-                this.cuttingPoints[1].position.copy(pointer[0].point);
+                this.cuttingLinePoints[0].position.copy(pointer[0].point);
+                this.cuttingLinePoints[1].position.copy(pointer[0].point);
             }
 
-            this.experience.scene.add(this.cuttingPoints[0], this.cuttingPoints[1]);
+            this.experience.scene.add(this.cuttingLinePoints[0], this.cuttingLinePoints[1]);
+            this.createCuttingLine();
         }
     }
 
     createCuttingLine() {
         if (this.activateCutting) {
             const geometry = new LineGeometry();
-            geometry.setFromPoints([this.cuttingPoints[0].position, this.cuttingPoints[1].position]);
+            geometry.setFromPoints([this.cuttingLinePoints[0].position, this.cuttingLinePoints[1].position]);
             this.cuttingLine = new Line2(geometry, new LineMaterial({
                 color: 'crimson',
                 linewidth: 5,
@@ -192,8 +204,8 @@ export default class World {
         if (this.activateCutting) {
             const pointer = this.experience.raycaster.shootRayfromCamera(this.invisiblePlane);
             if (pointer) {
-                this.cuttingPoints[1].position.copy(pointer[0].point);
-                this.cuttingLine.geometry.attributes.instanceEnd.setXYZ(0, this.cuttingPoints[1].position.x, this.cuttingPoints[1].position.y, this.cuttingPoints[1].position.z);
+                this.cuttingLinePoints[1].position.copy(pointer[0].point);
+                this.cuttingLine.geometry.attributes.instanceEnd.setXYZ(0, this.cuttingLinePoints[1].position.x, this.cuttingLinePoints[1].position.y, this.cuttingLinePoints[1].position.z);
                 this.cuttingLine.geometry.attributes.instanceEnd.needsUpdate = true;
                 this.cuttingLine.material.resolution.set(this.experience.sizes.width, this.experience.sizes.height);
             }
@@ -203,11 +215,14 @@ export default class World {
     pointerup() {
 
         if (this.activateCutting) {
+            /*
+                Generate Cutting Plane
+            */
 
             this.createCuttingBrush(this.createCuttingCube());
 
-            this.cuttingPoints.forEach(point => this.experience.scene.remove(point));
-            this.cuttingPoints = [];
+            this.cuttingLinePoints.forEach(point => this.experience.scene.remove(point));
+            this.cuttingLinePoints = [];
             this.experience.scene.remove(this.cuttingLine);
             this.experience.camera.controls.enabled = true;
             this.activateCutting = false;
@@ -217,7 +232,7 @@ export default class World {
 
     createCuttingCube() {
 
-        const points = this.cuttingPoints;
+        const points = this.cuttingLinePoints;
 
         const direction = new Vector3();
         this.experience.camera.instance.getWorldDirection(direction);
@@ -230,18 +245,17 @@ export default class World {
         const point3 = points[1].position.clone().add(forwardDir);
         const point4 = points[1].position.clone().add(backwardDir);
 
-        const createRedSphere = (position: Vector3) => {
+        const createRedSphere = (position: Vector3, idx: number) => {
             const geometry = new SphereGeometry(0.1, 16, 16);
             const material = new MeshBasicMaterial({ color: new Color('red') });
-            const sphere = new Mesh(geometry, material);
-            sphere.position.copy(position);
-            this.experience.scene.add(sphere);
+            this.cuttingPlanePoints[idx] = new Mesh(geometry, material);
+            this.cuttingPlanePoints[idx].position.copy(position);
+            this.experience.scene.add(this.cuttingPlanePoints[idx]);
         };
 
-        createRedSphere(point1);
-        createRedSphere(point2);
-        createRedSphere(point3);
-        createRedSphere(point4);
+        [point1, point2, point3, point4].forEach((point, idx) => {
+            createRedSphere(point, idx);
+        })
 
         const geometry = new BufferGeometry();
         const vertices = new Float32Array([
@@ -264,17 +278,18 @@ export default class World {
             opacity: 0.5
         });
 
-        const cuttingPlane = new Mesh(geometry, material);
-        this.experience.scene.add(cuttingPlane);
-
-
-
+        /*
+            Creating Plane From Line Captured
+        */
+        this.cuttingPlane = new Mesh(geometry, material);
+        this.experience.scene.add(this.cuttingPlane);
+        this.cuttingPlaneActive = true;
 
 
         // Create a cube whose one face is coplanar with the cutting plane
         const boxWidth = point1.distanceTo(point3);
         const boxHeight = point1.distanceTo(point2);
-        const boxDepth = 5; // Depth of the box (thickness)
+        const boxDepth = 10; // Depth of the box (thickness)
 
         const boxGeometry = new BoxGeometry(boxWidth, boxHeight, boxDepth);
         const boxMaterial = new MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
@@ -297,45 +312,97 @@ export default class World {
         const faceOffset = normal.clone().multiplyScalar(-0.5 * boxDepth);
         box.position.copy(center).add(faceOffset);
 
-
-        // this.experience.scene.add(box);
-
+        //retuns new Cutting geometry
         return box;
     }
 
     keydown(event: KeyboardEvent) {
 
-        this.baseBrush.updateMatrixWorld(true);
-        this.cutter.updateMatrixWorld(true);
-
-        //check controls key is pressed
         if (event.code == "ControlLeft") {
             this.ctrlActive = true;
         }
 
-        if (event.code === 'KeyI') {
-            console.log('intersect');
+        /*
+            Cut Operation Listner
+        */
+
+        if (event.code === 'KeyC') { 
+
+            this.baseBrush = this.experience.raycaster.getSelectedObject();
+
+            if (!this.baseBrush || !this.cuttingPlane || !this.cutter) return;
+
+            this.baseBrush.updateMatrixWorld(true);
+            this.cutter.updateMatrixWorld(true);
 
             this.evaluator.useGroups = true
 
-            const result = this.evaluator.evaluate(this.baseBrush, this.cutter, INTERSECTION);
+            const result1 = this.evaluator.evaluate(this.baseBrush, this.cutter, INTERSECTION);
+            const result2 = this.evaluator.evaluate(this.baseBrush, this.cutter, SUBTRACTION);
 
-            result.position.set(0, 2, 0);
+            if (Array.isArray(result1.material)) {
+                result1.material.forEach((material) => {
+                    if ('color' in material) {
+                        material.color = new Color(0xffffff);
+                    }
+                });
+            } else {
+                if ('color' in result1.material) {
+                    result1.material.color = new Color(0xffffff);
+                }
+            }
 
-            this.experience.scene.add(result); //returns new mesh
+            this.selectableObjects.push(result1);
+            this.selectableObjects.push(result2);
 
+            result1.position.set(0, .2, 0);
+            result2.position.set(0, -.2, 0);
+
+            this.experience.scene.add(result1);
+            this.experience.scene.add(result2);
+
+            this.disposeCuttingPlane();
+            this.disposeCuttingCutter();
+            this.disposeMeshCuttedDown();
         }
 
-        if (event.code === 'KeyS') {
-            console.log('subtract');
+        /*
+            Cancel Cut Operation Listner
+        */
 
-            const result = this.evaluator.evaluate(this.baseBrush, this.cutter, SUBTRACTION);
-            result.position.set(0, -2, 0);
-
-            this.experience.scene.add(result); //returns the new mesh 
-
-            // this.transformControls.attach(result);
+        if (event.code == 'KeyX') { //cancel cutting
+            this.disposeCuttingPlane();
+            this.disposeCuttingCutter();
         }
+    }
+
+    disposeCuttingPlane() {
+        //clear cutting plane after cut
+        this.experience.scene.remove(this.cuttingPlane);
+        this.cuttingPlanePoints.forEach((point) => {
+            this.experience.scene.remove(point);
+        })
+        this.cuttingPlanePoints = [];
+        this.cuttingPlaneActive = false;
+    }
+
+    disposeCuttingCutter() {
+        //clear cutter
+        this.experience.scene.remove(this.cutter);
+    }
+
+    disposeMeshCuttedDown() {
+        //clear selected Object
+        this.experience.scene.remove(this.baseBrush);
+        this.selectableObjects.forEach((model, idx) => {
+            if (model.uuid == this.baseBrush.uuid) {
+                this.selectableObjects.splice(idx, 1);
+            }
+        })
+    }
+
+    disposeBaseBrush() {
+        this.disposeMeshCuttedDown();
     }
 
     keyup(event: KeyboardEvent) {

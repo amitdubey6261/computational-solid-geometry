@@ -10,7 +10,7 @@ export default class Environment{
     }
 
     createLights(){
-        const ambientLight = new AmbientLight(0xffffff, 0.5);
+        const ambientLight = new AmbientLight(0xffffff, 2 );
         this.experience.scene.add(ambientLight);
     }
 }
