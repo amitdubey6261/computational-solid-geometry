@@ -16,8 +16,8 @@ export default class Eventlisteners{
         this.experince.world.pointerdown(event);
     }
 
-    pointerup(event: PointerEvent){
-        this.experince.world.pointerup(event);
+    pointerup(){
+        this.experince.world.pointerup();
     }
 
     keydown(event: KeyboardEvent){
@@ -26,7 +26,7 @@ export default class Eventlisteners{
 
     pointermove(event: PointerEvent){
         this.experince.raycaster?.pointermove(event);
-        this.experince.world.pointermove(event);
+        this.experince.world.pointermove();
     }
 
     keyup(event: KeyboardEvent){

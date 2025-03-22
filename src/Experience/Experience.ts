@@ -7,6 +7,7 @@ import Raycast from "./Raycaster";
 import World from "./World";
 import Environment from "./Envrionment";
 import Eventlisteners from "./Eventlistners";
+import Resources from "./Resources";
 
 export default class Experience {
 	static instance: Experience;
@@ -17,6 +18,7 @@ export default class Experience {
 	camera !: Camera ;
 	renderer !: Renderer ; 
 	raycaster !: Raycast ;
+	resources !: Resources ; 
 	world !: World ;
 
 	scene !: Scene ;
@@ -39,6 +41,7 @@ export default class Experience {
 		this.renderer = new Renderer() ;
 		this.raycaster = new Raycast() ;
 		this.envrionment = new Environment() ;
+		this.resources = new Resources() ; 
 		this.world = new World() ; 
 
 		this.time.on('tick' , ()=>{
