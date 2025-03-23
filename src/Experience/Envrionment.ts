@@ -1,5 +1,7 @@
-import { AmbientLight } from "three";
+import { Color, PMREMGenerator } from "three";
 import Experience from "./Experience";
+import { RoomEnvironment } from "three/examples/jsm/Addons.js";
+
 
 export default class Environment{
     experience !: Experience ;
@@ -10,7 +12,15 @@ export default class Environment{
     }
 
     createLights(){
-        const ambientLight = new AmbientLight(0xffffff, 2 );
-        this.experience.scene.add(ambientLight);
+
+        this.experience.scene.background = new Color(0x002244)
+
+        const environment = new RoomEnvironment();
+        const pmremGenerator = new PMREMGenerator( this.experience.renderer.instance );
+
+        this.experience.scene.environment = pmremGenerator.fromScene( environment ).texture;
+
     }
+
+
 }

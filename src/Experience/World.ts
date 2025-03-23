@@ -1,4 +1,4 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, Vector3 } from "three";
+import { BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, IcosahedronGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, PolyhedronGeometry, Quaternion, SphereGeometry, TorusGeometry, TubeGeometry, Vector3 } from "three";
 import Experience from "./Experience";
 import { SUBTRACTION, INTERSECTION, Brush, Evaluator } from "three-bvh-csg";
 import { DragControls, GLTF, Line2, LineGeometry, LineMaterial } from "three/examples/jsm/Addons.js";
@@ -21,6 +21,19 @@ export default class World {
     cuttingPlanePoints: Mesh[] = [];
 
     selectableObjects: Brush[] = [];
+
+    activeGeometryIndex:number = 0 ; 
+
+    geometries = [
+        new BoxGeometry(),
+        new SphereGeometry(),
+        new IcosahedronGeometry(),
+        new TorusGeometry(),
+        new CylinderGeometry(),
+        new TubeGeometry(),
+        new ConeGeometry(),
+        new TorusGeometry(),
+    ]
 
     constructor() {
         this.experience = new Experience();
@@ -48,7 +61,7 @@ export default class World {
         this.evaluator.attributes = ['position', 'normal'];
     }
 
-    createBaseBrush(model: GLTF | undefined = undefined) {
+    createBaseBrush(model: GLTF | BufferGeometry = this.geometries[0] ) {
         /* 
             This Method is for creating default Mesh which is going to be cut
         */
@@ -56,11 +69,15 @@ export default class World {
         this.disposeBaseBrush() ; 
 
         let geometry ; 
-        if( model && model.scene.children[0] instanceof Mesh ){
-            geometry = model.scene.children[0].geometry.clone() ; 
+
+        if( model instanceof BufferGeometry ){
+            geometry = model ; 
+        }
+        else if('scene' in model && model.scene instanceof Object3D && model.scene.children[0] instanceof Mesh ){
+            geometry = model.scene.children[0].geometry.clone(); 
         }
         else{
-            geometry = new BoxGeometry(1, 1, 1);
+            return ; 
         }
 
         geometry.computeVertexNormals();
@@ -68,12 +85,25 @@ export default class World {
         this.baseBrush.geometry = geometry;
         this.baseBrush.geometry.computeVertexNormals();
 
+        // this.baseBrush.material = new MeshStandardMaterial({
+        //     polygonOffset: true,
+        //     polygonOffsetUnits: 1,
+        //     polygonOffsetFactor: 1,
+        // })
+
         this.baseBrush.material = new MeshStandardMaterial({
-            flatShading: true,
+            color: 0x4488ff, // soft blue tone
+            metalness: 0.6,  // gives it a nice reflective finish
+            roughness: 0.25, // smoother = shinier
+            emissive: 0x112244, // subtle glow
+            emissiveIntensity: 0.1,
             polygonOffset: true,
             polygonOffsetUnits: 1,
             polygonOffsetFactor: 1,
-        })
+            transparent: true,
+            opacity: 0.95, // subtle transparency
+        });
+
         this.setGeometryProps(this.baseBrush);
         this.baseBrush.position.set(0, 0, 0);
         this.experience.scene.add(this.baseBrush);
@@ -325,7 +355,6 @@ export default class World {
         /*
             Cut Operation Listner
         */
-
         if (event.code === 'KeyC') { 
 
             this.baseBrush = this.experience.raycaster.getSelectedObject();
@@ -374,6 +403,17 @@ export default class World {
             this.disposeCuttingPlane();
             this.disposeCuttingCutter();
         }
+
+        /*
+            Toggle Geometries
+        */
+        if( event.code == 'KeyG'){
+            this.activeGeometryIndex++ ; 
+            this.createBaseBrush(this.geometries[this.activeGeometryIndex]); 
+            if( this.activeGeometryIndex >= this.geometries.length ){
+                this.activeGeometryIndex = 0 ; 
+            }
+        }
     }
 
     disposeCuttingPlane() {
@@ -406,7 +446,6 @@ export default class World {
     }
 
     keyup(event: KeyboardEvent) {
-        console.log(event)
         this.ctrlActive = false;
 
     }
