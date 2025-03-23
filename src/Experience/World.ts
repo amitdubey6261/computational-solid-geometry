@@ -1,4 +1,4 @@
-import { BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, IcosahedronGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, PolyhedronGeometry, Quaternion, SphereGeometry, TorusGeometry, TubeGeometry, Vector3 } from "three";
+import { BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, IcosahedronGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Quaternion, SphereGeometry, TorusGeometry, TubeGeometry, Vector3 } from "three";
 import Experience from "./Experience";
 import { SUBTRACTION, INTERSECTION, Brush, Evaluator } from "three-bvh-csg";
 import { DragControls, GLTF, Line2, LineGeometry, LineMaterial } from "three/examples/jsm/Addons.js";
@@ -460,7 +460,7 @@ export default class World {
         this.disposeMeshCuttedDown();
     }
 
-    keyup(event: KeyboardEvent) {
+    keyup() {
         this.ctrlActive = false;
 
     }

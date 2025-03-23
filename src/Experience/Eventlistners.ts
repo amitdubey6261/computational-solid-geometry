@@ -65,7 +65,7 @@ export default class Eventlisteners{
         this.experince.world.pointermove();
     }
 
-    keyup(event: KeyboardEvent){
-        this.experince.world.keyup(event); 
+    keyup(){
+        this.experince.world.keyup(); 
     }
 }
