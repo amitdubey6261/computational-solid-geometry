@@ -24,6 +24,12 @@
 
 ## How to Use
 
+### 📺 Demo Video
+
+[![Watch the demo](https://img.youtube.com/vi/i-cC9nrSR90/0.jpg)](https://youtu.be/i-cC9nrSR90?si=rhRZGRYSXOtXU6J6)
+
+---
+
 1. **Open the project in a browser.**  
    ![Home Screen](./public/Doc/homeScreen.png)
 
@@ -45,7 +51,10 @@
 7. **Select and move separated meshes independently.**  
    ![Move Separated Mesh](./public/Doc/moveSeparetdMesh.png)
 
-8. **Load GLTF models** by dragging files from your local file explorer. This repository includes sample GLTF models from the [KhronosGroup GLTF Sample Models](https://github.com/KhronosGroup/glTF-Sample-Models/tree/main/2.0).  
+8. **Toggle Geometry** by pressing the "G" key. You can toggle geometry or add new geometry.  
+   ![Toggle Geometry](./public/Doc/toggleGeometry.png)
+
+9. **Load GLTF models** by dragging files from your local file explorer. This repository includes sample GLTF models from the [KhronosGroup GLTF Sample Models](https://github.com/KhronosGroup/glTF-Sample-Models/tree/main/2.0).  
    ![Load GLTF](./public/Doc/loadGLTFModel.png)
 
 ---
@@ -66,4 +75,3 @@ A huge thanks to the brilliant minds behind the tools that made this project pos
 
 - [Mr. Doob](https://x.com/mrdoob?lang=en) – Creator of Three.js, the backbone of browser-based 3D graphics.  
 - [Garrett Johnson](https://x.com/garrettkjohnson?lang=en) – Developer of Three-Mesh-BVH, essential for efficient rendering and geometry slicing.
-
