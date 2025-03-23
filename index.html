@@ -2,13 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>Computational Solid Geometry</title>
   </head>
   <body style="overflow: hidden;">
     <div id="app"></div>
     <canvas id="canvas"></canvas>
+
+    <div class="info">
+      <span>Select Object: <kbd>Click</kbd></span> |
+      <span>Generate Cutting Plane: <kbd>Ctrl</kbd> + <kbd>Drag</kbd></span> |
+      <span>Delete Cutting Plane: <kbd>X</kbd></span> |
+      <span>Execute Cutting: <kbd>C</kbd></span> |
+      <span>New Geometry: <kbd>G</kbd></span> |
+      <span>GLTF Support: <kbd>Drag & Drop</kbd></span>
+    </div>
+
+    <a class="Github" href="https://github.com/amitdubey6261/computational-solid-geometry.git" target="_blank" rel="noopener">
+      <img src="./public/github-mark.svg" alt="GitHub Logo">
+    </a>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
