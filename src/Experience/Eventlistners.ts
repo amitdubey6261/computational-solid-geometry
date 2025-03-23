@@ -34,6 +34,7 @@ export default class Eventlisteners{
 
         reader.onload = (event) => {
             const arrayBuffer = event.target?.result;
+
             if (!arrayBuffer || typeof arrayBuffer === 'string') return;
 
             this.experince.resources.gltfloader.parse(arrayBuffer as ArrayBuffer , '' , (gltf)=>{

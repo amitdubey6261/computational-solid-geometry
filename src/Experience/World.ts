@@ -73,35 +73,50 @@ export default class World {
         if( model instanceof BufferGeometry ){
             geometry = model ; 
         }
-        else if('scene' in model && model.scene instanceof Object3D && model.scene.children[0] instanceof Mesh ){
-            geometry = model.scene.children[0].geometry.clone(); 
+        else if('scene' in model && model.scene instanceof Object3D ){
+            // geometry = model.scene.children[0].geometry.clone(); 
+            model.scene.traverse((element)=>{
+                if( element instanceof Mesh ){
+                    geometry = element.geometry.clone() ; 
+                    return ; 
+                }
+            })
+
+            console.log(geometry)
         }
         else{
             return ; 
         }
 
+        if( !geometry ) return ; 
+
+        //normalizing geometry max 0 - 1 
+        geometry.center();
+        geometry.computeBoundingBox();
+        const size = new Vector3();
+        geometry.boundingBox!.getSize(size);
+    
+        const maxAxis = Math.max(size.x, size.y, size.z);
+        geometry.scale(1 / maxAxis, 1 / maxAxis, 1 / maxAxis);
+        geometry.scale( 2,2,2);
+    
         geometry.computeVertexNormals();
+        geometry.computeBoundingSphere();
+
 
         this.baseBrush.geometry = geometry;
-        this.baseBrush.geometry.computeVertexNormals();
-
-        // this.baseBrush.material = new MeshStandardMaterial({
-        //     polygonOffset: true,
-        //     polygonOffsetUnits: 1,
-        //     polygonOffsetFactor: 1,
-        // })
 
         this.baseBrush.material = new MeshStandardMaterial({
-            color: 0x4488ff, // soft blue tone
-            metalness: 0.6,  // gives it a nice reflective finish
-            roughness: 0.25, // smoother = shinier
-            emissive: 0x112244, // subtle glow
+            color: 0x4488ff, 
+            metalness: 0.6,  
+            roughness: 0.25, 
+            emissive: 0x112244, 
             emissiveIntensity: 0.1,
             polygonOffset: true,
             polygonOffsetUnits: 1,
             polygonOffsetFactor: 1,
             transparent: true,
-            opacity: 0.95, // subtle transparency
+            opacity: 0.95, 
         });
 
         this.setGeometryProps(this.baseBrush);
